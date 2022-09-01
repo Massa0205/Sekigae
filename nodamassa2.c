@@ -1,4 +1,4 @@
-#include "MASA.h"
+#include "masa.h"
 #include <stdbool.h>
 
 
@@ -21,13 +21,16 @@ typedef struct{
 	bool seatDecide;
 }STUDENT;
 
+#define KYOUSITU 1
+#define DAISAN 2
+#define SEKIGAE 1
+#define END 2
 #define LIGHTBLUE 6
 #define WHITE 7
 #define MAX_HEIGHT 76
 #define GREEN 12
 #define MAX_WIDTH
-#define KYOUSITU 1
-#define DAISAN 2
+
 
 //プロトタイプ宣言
 void mode_seat_change(int room,int ninzu);
@@ -45,41 +48,70 @@ bool y_n_check(void);
 
 int main(void)
 {
+	int mode
+	bool isEnd = false;
+	
+	clear_screen();
 
-	int mode,room,studentCount;
-	int x,y;
+	// 席替えが選択されたら処理を続ける
+	while(select_mode()){
+		seat_change_logic();
+	}
+	
+	// 終了が選択されたらプログラムを終了
+	clear_screen();
+	printf("3秒後にプログラムを終了します。");
+	Sleep(3000);
+	return 0;
+}
 
+bool select_mode(){
+
+	locate( 0, 0);
+	printf("モードを選択してください\n\n"); 
+	printf("1:席替え\n\n"); //2,9
+	printf("2:終了\n\n");	//4,7
+	//モードを選択//
+	mode = input_check(1,2);
+	return mode == 1;
+}
+void clear_screen(){
 	system("cls");
-	/**************メニュー画面**************/ //二回目以降はバグるから配列の初期化処理を追加予定
-	while( 1 ){
-		locate( 0, 0);
-		printf("モードを選択してください\n\n"); 
-		printf("1:席替え\n\n"); //2,9
-		printf("2:終了\n\n");	//4,7
-		
-		//モードを選択//
-		mode = input_check(1,2);
+}
+bool read_csv(){
 
-		//ユーザーから教室と第三実習室のモード選択をしてもらいmode_sekigaeに渡す
-		switch(mode){
-			case 1://席替えモード
-				locate(2,15);
-				printf("1:教室(A303)");
-				locate( 4, 15);
-				printf("2:第三実習室\n");
-				room = input_check( 1, 2);
-				system("cls");
-				printf("席替えを行うクラスの人数を入力してください。\n人数:");
-				studentCount = input_check( 1, 45);
-				mode_seat_change( mode, studentCount);
-				break;
-				
-			case 2://終了
-				system("cls");
-				printf("3秒後にプログラムを終了します。");
-				Sleep(3000);
-				exit(1);
+	char[256] filename;
+	bool is_require_read = true;
+	printf("読み込み元ファイル名を入力してください:");
+	scanf("%s",filename);
+	
+	/******csv読み込めなかったら******/
+	while(is_require_read){
+		if(( fp = fopen(filename, "r")) == NULL ){
+			//ファイルを閉じる
+			fclose(fp);
+			printf("ファイルの読み込みに失敗しました。\n");
+			printf("もう一度入力しますか？\n\n");
+			printf("1:はい\n");
+			printf("2:いいえ\n");	
+			//ファイルの再度入力がNO ファイル入力は0のままループ抜ける
+			if( retry = y_n_check() == false){
+				return false;
+			}
+			else{
+				continue;
+			}
 		}
+		printf("ファイルの読み込みに成功しました。");
+		fp = fopen(filename,"r");
+		//読み込みモードでファイルオープン
+		for(i = 0;i < studentCount;i++){
+			fscanf(fp, "%s", (studentInfoPointer + i)->name);
+			studentInfoPointer->seatDecide = false;
+		}
+		//ファイルを閉じる
+		fclose(fp);
+		return true;
 	}
 }
 void mode_seat_change( int room, int studentCount)
@@ -94,47 +126,24 @@ void mode_seat_change( int room, int studentCount)
 	studentInfoPointer=(STUDENT*)malloc(studentCount*(sizeof(STUDENT)));
 	*studentInfoPointer = studentInfoPointer[0];
 
+
+	locate(2,15);
+	printf("1:教室(A303)");
+	locate( 4, 15);
+	printf("2:第三実習室\n");
+	room = input_check( 1, 2);
+	system("cls");
+	printf("席替えを行うクラスの人数を入力してください。\n人数:");
+	studentCount = input_check( 1, 45);
 	/****エクセルファイル読み込み処理****/
 	printf("Excelファイルから生徒情報を読み込みますか？\n\n");
 	printf("1:はい\n");
 	printf("2:いいえ\n");
 
-	//csvの読み込みが選択されたら
-	if(	excelInput = y_n_check() == true){
+	// csvの読み込みが選択されたら
+	if(excelInput = y_n_check()){
 		while(flg == 0){
-			printf("読み込み元ファイル名を入力してください:");
-			scanf("%s",filename);
-			
-			/******csv読み込めなかったら******/
-			if(( fp = fopen(filename,"r")) == NULL ){
-				//ファイルを閉じる
-				fclose(fp);
-				printf("ファイルの読み込みに失敗しました。\n");
-				printf("もう一度入力しますか？\n\n");
-				printf("1:はい\n");
-				printf("2:いいえ\n");	
-				//ファイルの再度入力がNO ファイル入力は0のままループ抜ける
-				if( retry = y_n_check() == false){
-					flg = 2;
-				}
-				else{
-					continue;
-				}
-			}
-			/******読み込みに成功******/
-			else{
-				printf("ファイルの読み込みに成功しました。");
-				fp = fopen(filename,"r");
-				excelLoad = true;
-				//読み込みモードでファイルオープン
-				for(i=0;i<studentCount;i++){
-					fscanf(fp,"%s",(studentInfoPointer+i)->name);
-					studentInfoPointer->seatDecide=false;
-				}
-				//ファイルを閉じる
-				fclose(fp);
-				flg=1;
-			}
+
 		}
 		//エクセルファイルが入力されなかったら
 		if(excelInput==false || flg == 2){
