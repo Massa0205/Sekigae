@@ -4,22 +4,25 @@
 
 bool excelLoad;
 
-struct list{
-	int num;
+typedef struct list{
+	struct student*;
 	struct list* prev;
 	struct list* next;
-};
+}list;
+
+typedef struct{
+	int number;
+	char name[24];
+	bool is_set_seat;
+}student;
 
 typedef struct{
 	int locate_x;
 	int locate_y;
 	int seatusages;
-}LOCATE;
+}seat_location;
 
-typedef struct{
-	char name[24];
-	bool seatDecide;
-}STUDENT;
+
 
 #define KYOUSITU 1
 #define DAISAN 2
@@ -41,7 +44,7 @@ void layout_outputfaster(LOCATE *locatep,STUDENT* stup,int room);
 STUDENT* output_seat(LOCATE *locatep,STUDENT *stup,int ninzu,int room);
 int ransuu(int ninzu,STUDENT* stup,int x,int y);
 struct list* delete_list(struct list*current);
-bool y_n_check(void);
+bool yes_or_no(void);
 
 
 
@@ -61,13 +64,12 @@ int main(void)
 	// 終了が選択されたらプログラムを終了
 	clear_screen();
 	printf("3秒後にプログラムを終了します。");
-	Sleep(3000);
+	hold_process(3000);
 	return 0;
 }
-
 bool select_mode(){
 
-	locate( 0, 0);
+	locate(0, 0);
 	printf("モードを選択してください\n\n"); 
 	printf("1:席替え\n\n"); //2,9
 	printf("2:終了\n\n");	//4,7
@@ -75,9 +77,33 @@ bool select_mode(){
 	mode = input_check(1,2);
 	return mode == 1;
 }
+
+
+void hold_process(int time){
+	Sleep(time);
+}
+
+
+bool yes_or_no(void){
+	while(true){
+		int a = -1;
+		scanf("%d",&a);
+		if(a == 1){
+			return true;
+		}
+		else if(a == 2){
+			return false;
+		}
+	}
+}
 void clear_screen(){
+	/**
+	 * 画面をクリアする関数
+	 */
 	system("cls");
 }
+
+
 bool read_csv(){
 
 	char[256] filename;
@@ -87,7 +113,7 @@ bool read_csv(){
 	
 	/******csv読み込めなかったら******/
 	while(is_require_read){
-		if(( fp = fopen(filename, "r")) == NULL ){
+		if((fp = fopen(filename, "r")) == NULL){
 			//ファイルを閉じる
 			fclose(fp);
 			printf("ファイルの読み込みに失敗しました。\n");
@@ -95,7 +121,7 @@ bool read_csv(){
 			printf("1:はい\n");
 			printf("2:いいえ\n");	
 			//ファイルの再度入力がNO ファイル入力は0のままループ抜ける
-			if( retry = y_n_check() == false){
+			if(yes_or_no() == false){
 				return false;
 			}
 			else{
@@ -103,59 +129,55 @@ bool read_csv(){
 			}
 		}
 		printf("ファイルの読み込みに成功しました。");
-		fp = fopen(filename,"r");
+		fp = fopen(filename, "r");
 		//読み込みモードでファイルオープン
-		for(i = 0;i < studentCount;i++){
+		for(i = 0; i < studentCount; i++){
 			fscanf(fp, "%s", (studentInfoPointer + i)->name);
-			studentInfoPointer->seatDecide = false;
+			student_status_array->is_set_seat = false;
 		}
 		//ファイルを閉じる
 		fclose(fp);
 		return true;
 	}
 }
-void mode_seat_change( int room, int studentCount)
+void mode_seat_change(int room, int student_count)
 {
 
 	int but, i, flg = 0;
-	bool excelInput,retry;
+	bool is_require_csv, retry;
 	char filename[50];
 	FILE *fp;
-	STUDENT *studentInfoPointer;
+	student student_p;
 
-	studentInfoPointer=(STUDENT*)malloc(studentCount*(sizeof(STUDENT)));
-	*studentInfoPointer = studentInfoPointer[0];
+	student_p = (student*)malloc(student_count * (sizeof(student)));
+	*student_p = student_p[0];
 
 
 	locate(2,15);
 	printf("1:教室(A303)");
 	locate( 4, 15);
 	printf("2:第三実習室\n");
-	room = input_check( 1, 2);
-	system("cls");
+	room = input_check(1, 2);
+	clear_screen();
 	printf("席替えを行うクラスの人数を入力してください。\n人数:");
-	studentCount = input_check( 1, 45);
+	student_count = input_check(1, 45);
 	/****エクセルファイル読み込み処理****/
 	printf("Excelファイルから生徒情報を読み込みますか？\n\n");
 	printf("1:はい\n");
 	printf("2:いいえ\n");
-
 	// csvの読み込みが選択されたら
-	if(excelInput = y_n_check()){
-		while(flg == 0){
-
-		}
-		//エクセルファイルが入力されなかったら
-		if(excelInput==false || flg == 2){
-			//生徒情報の番号を書き込み
-			for( i=0 ;i < studentCount;i++){
-				sprintf((studentInfoPointer+1)->name,"%d",i);
-				(studentInfoPointer+1)->seatDecide=false;
-			}
+	if(yes_or_no()){
+		/**
+		 * CSV読み込み
+		 */
+	}
+	else{
+		for(i = 0; i < studentCount; i++){
+			sprintf((student_p + 1)->name, "%d", i);
+			(student_p + 1)->is_set_seat = false;
 		}
 		getch();
 	}
-	//*stup=stup[0];
 	//生徒の名簿出力
 	for( i = 0; i < studentCount ; i++){
 		printf("\n");
@@ -763,18 +785,6 @@ int input_check(int min,int max)
 		scanf("%d",&a);
 		if(a<=max && a>=min){
 			return a;
-		}
-	}
-}
-bool y_n_check(void){
-	int a=-1;
-	while(1){
-		scanf("%d",&a);
-		if(a==1){
-			return true;
-		}
-		else if(a==2){
-			return false;
 		}
 	}
 }
